@@ -1,49 +1,49 @@
-import { CFG } from '../config.js';
-import { replyEmbed } from '../ui.js';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-
-const ratio0 = CFG.payoutZero;
-
-const blocks = {
-  nap: [
-    { name: 'Nạp Tiền', value: '`/nap`' },
-  ],
-  rut: [
-    { name: 'Rút tiền', value: '`/rut`' },
-  ],
-  bet: [
-    { name: 'Cách chơi', value: '`/bet chon:<chan|le|0> sotien:<tiền cược>` nhập theo thứ tự bạn chọn chẵn hay lẻ hoặc 0, nhập tiếp số tiền cược, Trả thưởng với tỉ lệ Chẵn vs Lẻ **1:1** | 0 **1:8.5**' },
-  ],
-  taikhoan: [
-    { name: 'Xem tài khoản', value: '`/taikhoan`' },
-  ]
-};
+import { replyEmbed } from "../ui.js";
+import { CFG } from "../config.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
 export async function handleHelpCommand(interaction) {
-  const topic = interaction.options.getString('topic') || 'all';
-  const fields = topic === 'all'
-    ? [...blocks.nap, ...blocks.rut, ...blocks.bet, ...blocks.taikhoan]
-    : blocks[topic] ?? blocks.bet;
+  const lenh = interaction.options.getString("lenh");
+
+  const msg = {
+    bet: `🎰 **/bet chon:<tai|xiu> sotien:<SỐ>**
+• Kết quả = **chữ số cuối** của ID tin nhắn
+• 0–4 = **xỉu**, 5–9 = **tài**
+• Thắng trả **${100 - CFG.winFeePct}%** tiền cược (phí **${CFG.winFeePct}%**)
+• Thua mất toàn bộ tiền cược
+• Min bet: **0.1 USDT**`,
+    nap: "💸 **/nap** — Nạp tiền (💳 QR VND | 🪙 Crypto).",
+    rut: "🏧 **/rut** — Rút tiền (🪙 USDT | 🏦 Ngân hàng).",
+    taikhoan: "👤 **/taikhoan** — Xem số dư và lịch sử gần nhất.",
+    help: "ℹ️ **/help {lenh}** — Xem chi tiết 1 lệnh.",
+  };
+
+  const desc = lenh
+    ? msg[lenh] || "Không có thông tin."
+    : Object.values(msg).join("\n\n");
+
+  const components = [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel("📘 Hướng dẫn nạp")
+        .setURL("http://example.com/"),
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel("📗 Hướng dẫn rút")
+        .setURL("http://example.com/"),
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel("📙 Hướng dẫn chơi")
+        .setURL("http://example.com/")
+    ),
+  ];
 
   return replyEmbed(interaction, {
-    title: 'Hướng dẫn',
-    fields,
-    color: 'neutral',
-    components: [
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel('Hướng dẫn Nạp')
-          .setStyle(ButtonStyle.Link)
-          .setURL('https://example.com/help-nap'),
-        new ButtonBuilder()
-          .setLabel('Hướng dẫn Rút')
-          .setStyle(ButtonStyle.Link)
-          .setURL('https://example.com/help-rut'),
-        new ButtonBuilder()
-          .setLabel('Hướng dẫn Chơi')
-          .setStyle(ButtonStyle.Link)
-          .setURL('https://example.com/help-bet')
-      )
-    ]
+    title: "ℹ️ Trợ giúp",
+    desc,
+    color: "info",
+    ephemeral: true,
+    components,
   });
 }

@@ -1,40 +1,51 @@
-// src/ui.js
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder } from "discord.js";
 
-const COLORS = {
-  info: 0x2f81f7,
-  warn: 0xffcc00,
-  error: 0xff3b30,
+const palette = {
   ok: 0x22c55e,
-  neutral: 0x5865f2
+  error: 0xef4444,
+  warn: 0xf59e0b,
+  info: 0x3b82f6,
+  neutral: 0x94a3b8,
 };
 
-export function makeEmbed({ title, desc, color='neutral', fields=[], image, footer }) {
-  const eb = new EmbedBuilder()
-    .setColor(COLORS[color] ?? COLORS.neutral)
-    .setTitle(title || '\u200b');
-
+export function makeEmbed({
+  title,
+  desc,
+  fields,
+  color = "info",
+  footer,
+  image,
+}) {
+  const eb = new EmbedBuilder().setColor(palette[color] ?? palette.info);
+  if (title) eb.setTitle(title);
   if (desc) eb.setDescription(desc);
-  if (fields?.length) eb.addFields(fields.map(({name, value, inline=false}) => ({ name, value, inline })));
-  if (image) eb.setImage(image);
+  if (Array.isArray(fields) && fields.length) eb.addFields(fields);
   if (footer) eb.setFooter({ text: footer });
+  if (image) eb.setImage(image);
   return eb;
 }
 
-export function replyEmbed(interaction, { title, desc, color, fields, image, footer, components=[], ephemeral=true }) {
-  const eb = makeEmbed({ title, desc, color, fields, image, footer });
-  return interaction.reply({ embeds: [eb], components, ephemeral });
+export async function replyEmbed(
+  inter,
+  {
+    title,
+    desc,
+    fields,
+    color = "info",
+    footer,
+    image,
+    ephemeral = false,
+    components,
+  } = {}
+) {
+  const eb = makeEmbed({ title, desc, fields, color, footer, image });
+  return inter.reply({ embeds: [eb], ephemeral, components });
 }
 
-export function editEmbed(interaction, { title, desc, color, fields, image, footer, components=[] }) {
-  const eb = makeEmbed({ title, desc, color, fields, image, footer });
-  return interaction.editReply({ embeds: [eb], components });
-}
-
-export async function sendEmbedToChannel(client, channelId, { title, desc, color, fields, image, footer, contentPrefix='' }) {
-  if (!channelId) return;
-  const ch = await client.channels.fetch(channelId).catch(() => null);
-  if (!ch) return;
-  const eb = makeEmbed({ title, desc, color, fields, image, footer });
-  return ch.send({ content: contentPrefix || undefined, embeds: [eb] });
+export async function editEmbed(
+  inter,
+  { title, desc, fields, color = "info", footer, image, components } = {}
+) {
+  const eb = makeEmbed({ title, desc, fields, color, footer, image });
+  return inter.editReply({ embeds: [eb], components });
 }
