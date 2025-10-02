@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   method     TEXT NOT NULL,
   amount_u   INTEGER NOT NULL DEFAULT 0,
   amount_vnd INTEGER NOT NULL DEFAULT 0,
-  status     TEXT NOT NULL,      -- PENDING | HELD | APPROVED | REJECTED
+  status     TEXT NOT NULL,      -- PENDING | HOLD| APPROVED | REJECTED
   destination TEXT,
   reference   TEXT,
   created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -54,28 +54,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tx_ref_uq ON transactions(reference);
 `);
 
 export const q = {
-  // players
-  getPlayer: db.prepare(
-    `SELECT discord_id, username, balance_u FROM players WHERE discord_id=?`
-  ),
-  upsertPlayer: db.prepare(`
+    // players
+    getPlayer: db.prepare(
+        `SELECT discord_id, username, balance_u FROM players WHERE discord_id=?`
+    ),
+    upsertPlayer: db.prepare(`
     INSERT INTO players (discord_id, username, balance_u)
     VALUES (@discord_id, @username, @balance_u)
     ON CONFLICT(discord_id) DO UPDATE
       SET username=excluded.username, updated_at=CURRENT_TIMESTAMP
   `),
-  updateBalU: db.prepare(`
+    updateBalU: db.prepare(`
     UPDATE players
     SET balance_u = balance_u + @delta_u, updated_at=CURRENT_TIMESTAMP
     WHERE discord_id=@discord_id
   `),
 
-  // bets
-  insertBet: db.prepare(`
+    // bets
+    insertBet: db.prepare(`
     INSERT INTO bets (discord_id, username, choice, amount_u, message_id, last_digit, result, payout_u, net_change_u)
     VALUES (@discord_id, @username, @choice, @amount_u, @message_id, @last_digit, @result, @payout_u, @net_change_u)
   `),
-  lastBetsByUser: db.prepare(`
+    lastBetsByUser: db.prepare(`
     SELECT choice, amount_u, result, message_id, last_digit
     FROM bets
     WHERE discord_id=?
@@ -83,19 +83,19 @@ export const q = {
     LIMIT 5
   `),
 
-  // transactions
-  insertTx: db.prepare(`
+    // transactions
+    insertTx: db.prepare(`
     INSERT INTO transactions (discord_id, username, type, method, amount_u, amount_vnd, status, destination, reference)
     VALUES (@discord_id, @username, @type, @method, @amount_u, @amount_vnd, @status, @destination, @reference)
   `),
-  recentTx: db.prepare(`
+    recentTx: db.prepare(`
     SELECT id, type, method, amount_u, amount_vnd, status, created_at
     FROM transactions
     WHERE discord_id=?
     ORDER BY id DESC
     LIMIT 5
   `),
-  lastTxByUser: db.prepare(`
+    lastTxByUser: db.prepare(`
     SELECT type, status, method, amount_u, reference
     FROM transactions
     WHERE discord_id=?
@@ -105,24 +105,24 @@ export const q = {
 };
 
 export const settings = {
-  get: db.prepare(`SELECT value FROM settings WHERE key=?`),
-  upsert: db.prepare(`
+    get: db.prepare(`SELECT value FROM settings WHERE key=?`),
+    upsert: db.prepare(`
     INSERT INTO settings(key,value) VALUES(?,?)
     ON CONFLICT(key) DO UPDATE SET value=excluded.value
   `),
 };
 
 export const getBool = (key, def = true) => {
-  const r = settings.get.get(key)?.value;
-  if (r === undefined || r === null) return def;
-  return r === "1" || r === "true";
+    const r = settings.get.get(key)?.value;
+    if (r === undefined || r === null) return def;
+    return r === "1" || r === "true";
 };
 export const setBool = (key, v) => settings.upsert.run(key, v ? "1" : "0");
 
 // trạng thái có điều kiện (chặn double xử lý)
 export const qtx = {
-  getByRef: db.prepare(`SELECT * FROM transactions WHERE reference=?`),
-  setStatusByRefFromStatus: db.prepare(`
+    getByRef: db.prepare(`SELECT * FROM transactions WHERE reference=?`),
+    setStatusByRefFromStatus: db.prepare(`
     UPDATE transactions
     SET status=@next_status,
         destination=COALESCE(@destination, destination)
@@ -131,7 +131,7 @@ export const qtx = {
 };
 
 export function walCheckpointTruncate() {
-  try {
-    db.pragma("wal_checkpoint(TRUNCATE)");
-  } catch {}
+    try {
+        db.pragma("wal_checkpoint(TRUNCATE)");
+    } catch {}
 }
